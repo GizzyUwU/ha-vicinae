@@ -1,13 +1,16 @@
-import { Action, ActionPanel, Color, Icon, List, showToast, Cache } from "@vicinae/api";
-import { useEffect, useState } from "react";
-import { executeNmcliCommand, executeNmcliCommandSilent } from "../../lib/utils/execute-nmcli";
 import {
-  type CurrentConnection,
-  loadCurrentConnection,
-  loadWifiDevice,
-  parseWifiList,
+  Action,
+  ActionPanel,
+  Color,
+  Icon,
+  List,
+  showToast,
+  Cache,
+} from "@vicinae/api";
+import { useEffect, useState } from "react";
+import { executeNmcliCommandSilent } from "../../lib/utils/execute-nmcli";
+import {
   type SavedNetwork,
-  type WifiDevice,
 } from "../../lib/utils/wifi-helpers-nmcli";
 
 interface SavedNetworksResult {
@@ -40,40 +43,12 @@ function parseSavedConnections(output: string): SavedNetwork[] {
     .filter(Boolean) as SavedNetwork[];
 }
 
-export default function ManageSavedNetworksNmcli({ cache }: {
-    cache: Cache
-}) {
+export default function ManageSavedNetworksNmcli({ cache }: { cache: Cache }) {
   const [savedNetworks, setSavedNetworks] = useState<SavedNetworksResult>({
     networks: [],
     isLoading: true,
     error: null,
   });
-  const [currentConnection, setCurrentConnection] = useState<CurrentConnection | null>(null);
-  const [wifiDevice, setWifiDevice] = useState<WifiDevice | null>(null);
-  const [availableNetworks, setAvailableNetworks] = useState<string[]>([]);
-
-  const loadWifiDeviceData = async () => {
-    const device = await loadWifiDevice();
-    setWifiDevice(device);
-  };
-
-  const loadCurrentConnectionData = async () => {
-    const connection = await loadCurrentConnection();
-    setCurrentConnection(connection);
-  };
-
-  const loadAvailableNetworks = async () => {
-    try {
-      const result = await executeNmcliCommandSilent("device wifi list --rescan yes");
-      if (result.success) {
-        const networks = parseWifiList(result.stdout);
-        const ssids = networks.map((network) => network.ssid).filter((ssid) => ssid);
-        setAvailableNetworks(ssids);
-      }
-    } catch (error) {
-      console.error("Failed to load available networks:", error);
-    }
-  };
 
   const loadSavedNetworks = async () => {
     try {
@@ -91,9 +66,14 @@ export default function ManageSavedNetworksNmcli({ cache }: {
       }
 
       const networks = parseSavedConnections(result.stdout);
-
+      const cachedNetwork = cache.get("network");
+      const sorted = [...networks].sort((a, b) => {
+        if (a.name === cachedNetwork && b.name !== cachedNetwork) return -1;
+        if (b.name === cachedNetwork && a.name !== cachedNetwork) return 1;
+        return 0;
+      });
       setSavedNetworks({
-        networks,
+        networks: sorted,
         isLoading: false,
         error: null,
       });
@@ -101,45 +81,29 @@ export default function ManageSavedNetworksNmcli({ cache }: {
       setSavedNetworks({
         networks: [],
         isLoading: false,
-        error: error instanceof Error ? error.message : "Unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
       });
     }
   };
 
   const getStateIcon = (network: SavedNetwork) => {
-    const isConnected = currentConnection?.name === network.name;
-    if (isConnected) {
+    if (network.name === String(cache.get("network"))) {
       return Icon.CheckCircle;
-    }
-    switch (network.state.toLowerCase()) {
-      case "activated":
-        return Icon.CheckCircle;
-      case "activating":
-        return Icon.Clock;
-      default:
-        return Icon.Circle;
+    } else {
+      return Icon.Circle;
     }
   };
 
   const getStateColor = (network: SavedNetwork) => {
-    const isConnected = currentConnection?.name === network.name;
-    if (isConnected) {
+    if (network.name === String(cache.get("network"))) {
       return Color.Green;
-    }
-    switch (network.state.toLowerCase()) {
-      case "activated":
-        return Color.Green;
-      case "activating":
-        return Color.Orange;
-      default:
-        return Color.SecondaryText;
+    } else {
+      return Color.SecondaryText;
     }
   };
 
   useEffect(() => {
-    loadWifiDeviceData();
-    loadCurrentConnectionData();
-    loadAvailableNetworks();
     loadSavedNetworks();
   }, []);
 
@@ -164,7 +128,11 @@ export default function ManageSavedNetworksNmcli({ cache }: {
           icon={Icon.Exclamationmark}
           actions={
             <ActionPanel>
-              <Action title="Retry" icon={Icon.ArrowClockwise} onAction={loadSavedNetworks} />
+              <Action
+                title="Retry"
+                icon={Icon.ArrowClockwise}
+                onAction={loadSavedNetworks}
+              />
             </ActionPanel>
           }
         />
@@ -185,8 +153,10 @@ export default function ManageSavedNetworksNmcli({ cache }: {
   }
 
   return (
-    <List searchBarPlaceholder="Search networks..." isShowingDetail={true}>
-      <List.Section title={`Choose a network - ${savedNetworks.networks.length}`}>
+    <List searchBarPlaceholder="Search for a networks..." isShowingDetail={true}>
+      <List.Section
+        title={`Choose a network - ${savedNetworks.networks.length}`}
+      >
         {savedNetworks.networks.map((network) => (
           <List.Item
             key={network.uuid}
@@ -200,14 +170,23 @@ export default function ManageSavedNetworksNmcli({ cache }: {
                 markdown={`# ${network.name}`}
                 metadata={
                   <List.Item.Detail.Metadata>
-                    <List.Item.Detail.Metadata.Label title="Type" text={network.type} />
+                    <List.Item.Detail.Metadata.Label
+                      title="Type"
+                      text={network.type}
+                    />
                     <List.Item.Detail.Metadata.Label
                       title="Device"
                       text={network.device || "No device"}
                     />
-                    <List.Item.Detail.Metadata.Label title="State" text={network.state} />
+                    <List.Item.Detail.Metadata.Label
+                      title="State"
+                      text={network.state}
+                    />
                     <List.Item.Detail.Metadata.Separator />
-                    <List.Item.Detail.Metadata.Label title="UUID" text={network.uuid} />
+                    <List.Item.Detail.Metadata.Label
+                      title="UUID"
+                      text={network.uuid}
+                    />
                   </List.Item.Detail.Metadata>
                 }
               />
@@ -224,9 +203,6 @@ export default function ManageSavedNetworksNmcli({ cache }: {
                   title="Refresh"
                   icon={Icon.ArrowClockwise}
                   onAction={() => {
-                    loadWifiDeviceData();
-                    loadCurrentConnectionData();
-                    loadAvailableNetworks();
                     loadSavedNetworks();
                   }}
                   shortcut={{ modifiers: ["cmd"], key: "r" }}

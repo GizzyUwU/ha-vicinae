@@ -40,7 +40,7 @@
       "type": "password"
     },
     {
-      "name": "network-cli-tool",
+      "name": "networktool",
       "title": "Network CLI Tool",
       "description": "Which Network Manager CLI tool you're system uses?",
       "required": true,

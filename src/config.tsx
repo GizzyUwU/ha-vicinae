@@ -3,24 +3,31 @@ import {
   ActionPanel,
   List,
   useNavigation,
-  Cache
+  Cache,
+  getPreferenceValues,
 } from "@vicinae/api";
-import Nmcli from "./components/config/networks"; // Capital N
+import NMCLI from "./components/config/nmcli";
+import INIPForm from "./components/config/inIPForm"
 
 export default function ListDetail() {
-  const { push, pop } = useNavigation();
-  const cache = new Cache()
+  const { networktool } = getPreferenceValues();
+  const { push } = useNavigation();
   return (
     <List isShowingDetail searchBarPlaceholder="Search for options...">
       <List.Section title="Configuration">
         <List.Item
-          key="home-network"
-          title="Set a Home Network"
+          key="internal-network"
+          title="Configure a internal network"
           actions={
             <ActionPanel>
               <Action
                 title="Enter"
-                onAction={() => push(<Nmcli cache={cache} />)}
+                onAction={() => {
+                  switch (networktool) {
+                    case "nmcli":
+                      return push(<INIPForm />);
+                  }
+                }}
               />
             </ActionPanel>
           }
