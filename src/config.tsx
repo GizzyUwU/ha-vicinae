@@ -7,7 +7,6 @@ import {
   getPreferenceValues,
 } from "@vicinae/api";
 import NMCLI from "./components/config/nmcli";
-import INIPForm from "./components/config/inIPForm"
 
 export default function ListDetail() {
   const { networktool } = getPreferenceValues();
@@ -25,7 +24,7 @@ export default function ListDetail() {
                 onAction={() => {
                   switch (networktool) {
                     case "nmcli":
-                      return push(<INIPForm />);
+                      return push(<NMCLI />);
                   }
                 }}
               />

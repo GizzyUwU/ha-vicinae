@@ -5,13 +5,13 @@ import {
   Icon,
   List,
   showToast,
-  Cache,
+  LocalStorage,
+  useNavigation,
 } from "@vicinae/api";
 import { useEffect, useState } from "react";
 import { executeNmcliCommandSilent } from "../../lib/utils/execute-nmcli";
-import {
-  type SavedNetwork,
-} from "../../lib/utils/wifi-helpers-nmcli";
+import { type SavedNetwork } from "../../lib/utils/wifi-helpers-nmcli";
+import INIP from "./inIPForm";
 
 interface SavedNetworksResult {
   networks: SavedNetwork[];
@@ -43,12 +43,17 @@ function parseSavedConnections(output: string): SavedNetwork[] {
     .filter(Boolean) as SavedNetwork[];
 }
 
-export default function ManageSavedNetworksNmcli({ cache }: { cache: Cache }) {
+export default function ManageSavedNetworksNmcli() {
+  const { push } = useNavigation();
   const [savedNetworks, setSavedNetworks] = useState<SavedNetworksResult>({
     networks: [],
     isLoading: true,
     error: null,
   });
+
+  const getNetworkName = async () => {
+    return await LocalStorage.getItem("networkName");
+  }
 
   const loadSavedNetworks = async () => {
     try {
@@ -66,7 +71,7 @@ export default function ManageSavedNetworksNmcli({ cache }: { cache: Cache }) {
       }
 
       const networks = parseSavedConnections(result.stdout);
-      const cachedNetwork = cache.get("network");
+      const cachedNetwork = await LocalStorage.getItem("networkName");
       const sorted = [...networks].sort((a, b) => {
         if (a.name === cachedNetwork && b.name !== cachedNetwork) return -1;
         if (b.name === cachedNetwork && a.name !== cachedNetwork) return 1;
@@ -88,7 +93,8 @@ export default function ManageSavedNetworksNmcli({ cache }: { cache: Cache }) {
   };
 
   const getStateIcon = (network: SavedNetwork) => {
-    if (network.name === String(cache.get("network"))) {
+    const storedNetwork = getNetworkName();
+    if (network.name === String(storedNetwork)) {
       return Icon.CheckCircle;
     } else {
       return Icon.Circle;
@@ -96,7 +102,8 @@ export default function ManageSavedNetworksNmcli({ cache }: { cache: Cache }) {
   };
 
   const getStateColor = (network: SavedNetwork) => {
-    if (network.name === String(cache.get("network"))) {
+    const storedNetwork = getNetworkName()
+    if (network.name === String(storedNetwork)) {
       return Color.Green;
     } else {
       return Color.SecondaryText;
@@ -153,7 +160,10 @@ export default function ManageSavedNetworksNmcli({ cache }: { cache: Cache }) {
   }
 
   return (
-    <List searchBarPlaceholder="Search for a networks..." isShowingDetail={true}>
+    <List
+      searchBarPlaceholder="Search for a networks..."
+      isShowingDetail={true}
+    >
       <List.Section
         title={`Choose a network - ${savedNetworks.networks.length}`}
       >
@@ -196,7 +206,10 @@ export default function ManageSavedNetworksNmcli({ cache }: { cache: Cache }) {
                 <Action
                   title="Use this network"
                   icon={Icon.Wifi}
-                  onAction={() => cache.set("network", network.name)}
+                  onAction={async () => {
+                    await LocalStorage.setItem("networkName", network.name)
+                    return push(<INIP />);
+                  }}
                   shortcut={{ modifiers: ["cmd"], key: "enter" }}
                 />
                 <Action

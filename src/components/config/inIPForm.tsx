@@ -5,12 +5,12 @@ import {
   Cache,
   Form,
   showToast,
-  Toast
+  Toast,
+  LocalStorage
 } from "@vicinae/api";
 import Config from "../../config"
 export default function ListDetail() {
   const { push } = useNavigation();
-  const cache = new Cache();
   return (
     <Form actions={
       <ActionPanel>
@@ -18,7 +18,7 @@ export default function ListDetail() {
           const { ip } = value;
           await showToast({ title: 'Please provide the Home Assistant IP', style: Toast.Style.Failure });
           if(!ip) return;
-          cache.set("inIP", String(ip))
+          await LocalStorage.setItem("homeIP", String(ip))
           await showToast({ title: 'Internal Network configured.' });
           return push(<Config />)
         }}/>
