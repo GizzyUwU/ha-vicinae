@@ -1,0 +1,74 @@
+{
+  "$schema": "https://raw.githubusercontent.com/vicinaehq/vicinae/refs/heads/main/extra/schemas/extension.json",
+  "name": "home-assistant",
+  "title": "Home Assistant",
+  "description": "Control Home Assistant from Vicinae",
+  "categories": [],
+  "license": "MIT",
+  "author": "Gizzy",
+  "contributors": [],
+  "pastContributors": [],
+  "icon": "extension_icon.png",
+  "commands": [
+    {
+      "name": "config",
+      "title": "Configuration",
+      "description": "Configuration of Home Assistant extension",
+      "mode": "view"
+    },
+    {
+      "name": "devices",
+      "title": "Devices",
+      "subtitle": "Devices connected to the Home Assistant instance",
+      "description": "AAAA",
+      "mode": "view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "server",
+      "title": "Server URL",
+      "description": "The url of the Home Assistant server e.g. https://home.gizzy.gay",
+      "required": true,
+      "type": "textfield"
+    },
+    {
+      "name": "token",
+      "title": "Access Token",
+      "description": "The access token required to access the service",
+      "required": true,
+      "type": "password"
+    },
+    {
+      "name": "network-cli-tool",
+      "title": "Network CLI Tool",
+      "description": "Which Network Manager CLI tool you're system uses?",
+      "required": true,
+      "type": "dropdown",
+      "data": [
+        {
+          "title": "nmcli",
+          "value": "nmcli"
+        },
+        {
+          "title": "iwctl",
+          "value": "iwctl"
+        }
+      ]
+    }
+  ],
+  "scripts": {
+    "build": "vici build",
+    "dev": "vici develop",
+    "format": "biome format --write src",
+    "lint": "vici lint"
+  },
+  "dependencies": {
+    "@vicinae/api": "^0.18.3",
+    "axios": "^1.13.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "@biomejs/biome": "2.3.2"
+  }
+}
